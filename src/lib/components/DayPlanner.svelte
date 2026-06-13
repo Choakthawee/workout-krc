@@ -1,18 +1,31 @@
 <script lang="ts">
 	import { CalendarDays, Clock3, Gauge, Target } from '@lucide/svelte';
 	import type { ProfileProgram, WeekdayId } from '$lib/data/profiles';
+	import { readStoredValue, writeStoredValue } from '$lib/utils/persisted-state';
 	import ProgramBlocks from './ProgramBlocks.svelte';
 
 	let { profile }: { profile: ProfileProgram } = $props();
 
 	let selectedDayId = $state<WeekdayId>('monday');
-	let selectedDay = $derived.by(() => profile.days.find((day) => day.id === selectedDayId));
+	let selectedDay = $derived.by(() => {
+		return profile.days.find((day) => day.id === selectedDayId) ?? profile.days[0];
+	});
 	let trainingDays = $derived(
 		profile.days
 			.filter((day) => day.type === 'training')
 			.map((day) => day.label.replace('วัน', ''))
 			.join(' / ')
 	);
+
+	$effect(() => {
+		const fallbackDay = profile.days[0]?.id ?? 'monday';
+		const storedDay = readStoredValue<WeekdayId>(`profile:${profile.key}:day`, fallbackDay);
+		selectedDayId = profile.days.some((day) => day.id === storedDay) ? storedDay : fallbackDay;
+	});
+
+	$effect(() => {
+		writeStoredValue(`profile:${profile.key}:day`, selectedDayId);
+	});
 
 	function selectDay(dayId: WeekdayId) {
 		selectedDayId = dayId;
@@ -80,7 +93,11 @@
 			</div>
 
 			<div class="selected-day-blocks">
-				<ProgramBlocks blocks={selectedDay.blocks} />
+				<ProgramBlocks
+					blocks={selectedDay.blocks}
+					storageScope={`${profile.key}:${selectedDay.id}`}
+					sectionId={`day-${selectedDay.id}`}
+				/>
 			</div>
 		</article>
 	{/if}

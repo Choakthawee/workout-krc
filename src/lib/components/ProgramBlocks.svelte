@@ -2,7 +2,15 @@
 	import type { ProgramBlock } from '$lib/data/profiles';
 	import ResponsiveTable from './ResponsiveTable.svelte';
 
-	let { blocks }: { blocks: ProgramBlock[] } = $props();
+	let {
+		blocks,
+		storageScope = 'default',
+		sectionId = 'section'
+	}: {
+		blocks: ProgramBlock[];
+		storageScope?: string;
+		sectionId?: string;
+	} = $props();
 
 	function blockKey(block: ProgramBlock) {
 		if (block.kind === 'table') return `table-${block.headers.join('-')}`;
@@ -13,7 +21,7 @@
 	}
 </script>
 
-{#each blocks as block (blockKey(block))}
+{#each blocks as block, blockIndex (blockKey(block))}
 	{#if block.kind === 'callout'}
 		<div class={['callout', block.tone]}>
 			{#if block.title}
@@ -41,6 +49,11 @@
 	{:else if block.kind === 'subheading'}
 		<h3>{block.title}</h3>
 	{:else if block.kind === 'table'}
-		<ResponsiveTable headers={block.headers} rows={block.rows} />
+		<ResponsiveTable
+			headers={block.headers}
+			rows={block.rows}
+			{storageScope}
+			storageKey={`${sectionId}-table-${blockIndex}`}
+		/>
 	{/if}
 {/each}

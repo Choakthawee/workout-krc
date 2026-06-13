@@ -2,7 +2,7 @@
 	import type { ProgramSection } from '$lib/data/profiles';
 	import ProgramBlocks from './ProgramBlocks.svelte';
 
-	let { section }: { section: ProgramSection } = $props();
+	let { section, profileKey }: { section: ProgramSection; profileKey: string } = $props();
 
 	let expandedOverride = $state<boolean | undefined>();
 	let expanded = $derived(expandedOverride ?? !section.defaultCollapsed);
@@ -30,13 +30,13 @@
 			aria-hidden={!expanded}
 		>
 			<div class="collapse-inner section-body">
-				<ProgramBlocks blocks={section.blocks} />
+				<ProgramBlocks blocks={section.blocks} storageScope={profileKey} sectionId={section.id} />
 			</div>
 		</div>
 	</section>
 {:else}
 	<section class="program-section" id={section.id}>
 		<h2>{section.title}</h2>
-		<ProgramBlocks blocks={section.blocks} />
+		<ProgramBlocks blocks={section.blocks} storageScope={profileKey} sectionId={section.id} />
 	</section>
 {/if}

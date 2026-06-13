@@ -15,7 +15,7 @@
 
 <div class="program-stack">
 	{#each profile.sections as section (section.id)}
-		<ProgramSection {section} />
+		<ProgramSection {section} profileKey={profile.key} />
 	{/each}
 </div>
 

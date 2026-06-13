@@ -1,16 +1,52 @@
 <script lang="ts">
 	import type { TableRow } from '$lib/data/profiles';
+	import { readStoredValue, writeStoredValue } from '$lib/utils/persisted-state';
 
-	let { headers, rows }: { headers: string[]; rows: TableRow[] } = $props();
+	type ResponsiveTableState = {
+		selectedWeek: string;
+		openRows: Record<string, boolean>;
+	};
+
+	let {
+		headers,
+		rows,
+		storageScope = 'default',
+		storageKey = 'table'
+	}: {
+		headers: string[];
+		rows: TableRow[];
+		storageScope?: string;
+		storageKey?: string;
+	} = $props();
 
 	let moveColumnIndex = $derived(headers.findIndex((header) => header === 'ท่า'));
 	let hasMoveColumn = $derived(moveColumnIndex !== -1);
 	let orderColumnIndex = $derived(headers.findIndex((header) => header === 'ลำดับ'));
 	let weekOptions = $derived(headers.filter(isWeekHeader));
-	let selectedWeek = $state('W1');
+	let selectedWeek = $state('');
 	let activeWeek = $derived(weekOptions.includes(selectedWeek) ? selectedWeek : weekOptions[0]);
 	let weekPickerId = $derived(`week-picker-${rows[0]?.id ?? headers.length}`);
 	let openRows = $state<Record<string, boolean>>({});
+
+	$effect(() => {
+		const fallbackWeek = weekOptions[0] ?? '';
+		const persisted = readStoredValue<ResponsiveTableState>(`${storageScope}:${storageKey}`, {
+			selectedWeek: fallbackWeek,
+			openRows: {}
+		});
+		selectedWeek = weekOptions.includes(persisted.selectedWeek)
+			? persisted.selectedWeek
+			: fallbackWeek;
+		openRows = Object.fromEntries(
+			Object.entries(persisted.openRows ?? {}).filter(([rowId]) =>
+				rows.some((row) => row.id === rowId)
+			)
+		);
+	});
+
+	$effect(() => {
+		writeStoredValue(`${storageScope}:${storageKey}`, { selectedWeek, openRows });
+	});
 
 	function isWeekHeader(header: string) {
 		return /^W\d+$/.test(header);
